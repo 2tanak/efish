@@ -1,0 +1,330 @@
+<template>
+  <div class="wrap__content" v-bind:class="{ 'wrap__content--preloader': !applications }">
+    <v-preloader v-if="!applications" :message="errorMessage"></v-preloader>
+
+    <div class="container" v-if="applications">
+      <div class="row">
+        <div class="col-xl-2 col-lg-3">
+          <v-sidebar :active="['PowerReservoirManagement']"></v-sidebar>
+        </div>
+        <div class="col-xl-10 col-lg-9">
+          <div class="content-wrapper">
+            <div class="card__content">
+              <div class="card__content-header">
+                <div class="content__title">
+                  <div class="content__title--element">
+                    <div class="content__title--text">
+                      {{ $t('sidebar.power_reservoir') }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="card__content--body">
+                <div class="table__block--content">
+                  <div class="table__block--filter">
+                    <div class="table__filter--left">
+                      <div class="table__filter--search">
+                        <label class="search__label">
+                          <input
+                            type="text"
+                            value=""
+                            name="filter_search"
+                            v-model="filters.search"
+                            :placeholder="$t('placeholder.search')"
+                          />
+                          <button>
+                            <svg
+                              width="24"
+                              height="24"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z"
+                                stroke="#52A5FC"
+                                stroke-width="1.5"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              />
+                              <path
+                                d="M20.9999 21L16.6499 16.65"
+                                stroke="#52A5FC"
+                                stroke-width="1.5"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              />
+                            </svg>
+                          </button>
+                        </label>
+                      </div>
+                    </div>
+                    <div class="table__filter--right">
+                      <router-link
+                        v-if="$store.getters.userPermission(['change_power'])"
+                        :to="'/' + $i18n.locale + '/account/power-reservoir/create'"
+                        class="btn--link btn--link--plus"
+                      >
+                        Создать новую запись <img src="../../../assets/img/icon-plus.svg" />
+                      </router-link>
+                    </div>
+                  </div>
+
+                  <v-data-table
+                    class="table__block--wrap"
+                    :headers="headers"
+                    :items="filteredlist"
+                    :loading="false"
+                    :options.sync="options"
+                    :footer-props="{
+                      'items-per-page-options': [5, 10, 20, 30, 40, 50],
+                    }"
+                  >
+                    <template v-slot:item.name="{ item }">
+                      {{ item.name }}
+                    </template>
+                    <template v-slot:item.user_id="{ item }">
+                      {{ item.user.first_name }} {{ item.user.last_name }} {{ item.user.middle_name
+                      }}<br />
+                      ({{ item.user.iin_bin }})
+                    </template>
+                    <template v-slot:item.region_id="{ item }">
+                      {{ item.region.value }}<br />
+                      {{ item.pond.value }}
+                    </template>
+                    <template v-slot:item.created_at="{ item }">
+                      {{ item.created_at | formatDate }}
+                    </template>
+
+                    <template v-slot:item.action="{ item }">
+                      <router-link
+                        :to="'/' + $i18n.locale + '/account/power-reservoir/' + item.id"
+                        class="tb__table--btn tb__table--view"
+                        v-tooltip.top-center="{
+                          content: $t('tooltip.look'),
+                          class: ['tooltip__btn'],
+                        }"
+                      >
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 18 18"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M0.75 9C0.75 9 3.75 3 9 3C14.25 3 17.25 9 17.25 9C17.25 9 14.25 15 9 15C3.75 15 0.75 9 0.75 9Z"
+                            stroke="#5ABB5E"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                          <path
+                            d="M9 11.25C10.2426 11.25 11.25 10.2426 11.25 9C11.25 7.75736 10.2426 6.75 9 6.75C7.75736 6.75 6.75 7.75736 6.75 9C6.75 10.2426 7.75736 11.25 9 11.25Z"
+                            stroke="#5ABB5E"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                        </svg>
+                      </router-link>
+                      <router-link
+                        v-if="$store.getters.userPermission(['change_power'])"
+                        :to="'/' + $i18n.locale + '/account/power-reservoir/' + item.id + '/edit'"
+                        class="tb__table--btn tb__table--edit"
+                        v-tooltip.top-center="{
+                          content: $t('tooltip.edit'),
+                          class: ['tooltip__btn'],
+                        }"
+                      >
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 18 18"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M9 15H15.75"
+                            stroke="#52A5FC"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                          <path
+                            d="M12.375 2.62505C12.6734 2.32668 13.078 2.15906 13.5 2.15906C13.7089 2.15906 13.9158 2.20021 14.1088 2.28016C14.3019 2.36012 14.4773 2.47731 14.625 2.62505C14.7727 2.77278 14.8899 2.94817 14.9699 3.1412C15.0498 3.33423 15.091 3.54112 15.091 3.75005C15.091 3.95898 15.0498 4.16587 14.9699 4.35889C14.8899 4.55192 14.7727 4.72731 14.625 4.87505L5.25 14.25L2.25 15L3 12L12.375 2.62505Z"
+                            stroke="#52A5FC"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                        </svg>
+                      </router-link>
+                      <a
+                        :href="urlApi + item.document"
+                        class="tb__table--btn tb__table--delete"
+                        target="_blank"
+                        v-tooltip.top-center="{ content: 'Скачать', class: ['tooltip__btn'] }"
+                      >
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 18 18"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M15.75 11.25V14.25C15.75 14.6478 15.592 15.0294 15.3107 15.3107C15.0294 15.592 14.6478 15.75 14.25 15.75H3.75C3.35218 15.75 2.97064 15.592 2.68934 15.3107C2.40804 15.0294 2.25 14.6478 2.25 14.25V11.25"
+                            stroke="#52A5FC"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                          <path
+                            d="M5.25 7.5L9 11.25L12.75 7.5"
+                            stroke="#52A5FC"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                          <path
+                            d="M9 11.25V2.25"
+                            stroke="#52A5FC"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                        </svg>
+                      </a>
+                    </template>
+                    <v-alert slot="no-results" :value="true" color="error">
+                      {{ $t('system_message.search') }}
+                    </v-alert>
+                  </v-data-table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { api, urlApi } from '@/boot/axios';
+import axios from 'axios';
+import Multiselect from 'vue-multiselect';
+
+export default {
+  components: {
+    Multiselect,
+    axios,
+  },
+  data() {
+    return {
+      urlApi: urlApi,
+
+      applications: null,
+      errorMessage: {
+        status: null,
+        text: null,
+      },
+      message: {
+        status: null,
+        text: null,
+      },
+
+      blockElemet: null,
+      unlockElemet: null,
+
+      filters: {
+        search: '',
+      },
+      options: {
+        itemsPerPage: 10,
+        page: 1,
+      },
+
+      filterCategories: this.$t('orders.userList'),
+      orderList: this.$t('orders.user'),
+
+      headers: [
+        { text: 'Id', value: 'id' },
+        { text: 'Название', value: 'name' },
+        { text: this.$t('headers.user'), value: 'user_id' },
+        { text: 'Регион/Водоем', value: 'region_id' },
+        { text: this.$t('headers.created_at'), value: 'created_at' },
+        {
+          text: this.$t('headers.action'),
+          value: 'action',
+          align: 'center',
+          sortable: false,
+          width: '200px',
+        },
+      ],
+    };
+  },
+  props: {
+    user: {
+      type: Object,
+    },
+  },
+  methods: {
+    apiGetUserDocumentList() {
+      api
+        .get('power-reservoir/list')
+        .then((response) => {
+          if (response.data) {
+            this.applications = response.data.data;
+          }
+        })
+        .catch((error) => {
+          if (error?.response?.status == 500) {
+            this.errorMessage.status = 500;
+            this.errorMessage.text = this.$t('system_message.500');
+          }
+          if (error?.response?.status == 401) {
+            this.errorMessage.status = 401;
+            this.errorMessage.text = error.response.data.error_message;
+            this.$router.push('/' + this.$i18n.locale + '/login');
+          }
+          if (error?.response?.status == 422) {
+            this.errorMessage.status = 422;
+            this.errorMessage.text = error.response.data.error_message;
+          }
+          if (error?.response?.status == 403) {
+            this.errorMessage.status = 403;
+            this.errorMessage.text = error?.response?.data?.message;
+          }
+        });
+    },
+  },
+  computed: {
+    filteredlist() {
+      return this.applications.filter((d) => {
+        /*if ((d.name ? d.name.toLowerCase().includes(this.filters.search.toLowerCase()) : true)
+            && (this.filterCategories.status == 'all' || d.is_deleted == this.filterCategories.status)) {*/
+        return true;
+        /*}*/
+      });
+    },
+  },
+  beforeMount() {
+    this.apiGetUserDocumentList();
+  },
+  beforeCreate() {
+    if (!localStorage.token) {
+      this.$router.push('/ru/login');
+    }
+  },
+  head: {
+    title() {
+      return {
+        inner: this.$t('sidebar.power_reservoir'),
+      };
+    },
+    meta: [],
+  },
+};
+</script>

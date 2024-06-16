@@ -1,0 +1,7 @@
+<template>
+  <footer>
+    <div class="container">
+      <div class="footer__row"></div>
+    </div>
+  </footer>
+</template>

@@ -1,0 +1,2067 @@
+<template>
+  <div
+    class="wrap__content"
+    v-bind:class="{
+      'wrap__content--preloader':
+        !applicationsUser || !applicationsPond || !applicationsRegion || !applicationsFish,
+    }"
+  >
+    <v-preloader
+      v-if="!applicationsUser || !applicationsPond || !applicationsRegion || !applicationsFish"
+      :message="errorMessage"
+    ></v-preloader>
+
+    <div
+      class="container"
+      v-if="applicationsUser && applicationsPond && applicationsRegion && applicationsFish"
+    >
+      <div class="row">
+        <div class="col-xl-2 col-lg-3">
+          <v-sidebar :active="['MyProfile']"></v-sidebar>
+        </div>
+        <div class="col-xl-10 col-lg-9">
+          <div class="content-wrapper">
+            <div class="card__content">
+              <div class="card__content-header">
+                <div class="content__title">
+                  <div class="content__page--back">
+                    <a @click="$router.go(-1)">
+                      <svg
+                        width="21"
+                        height="21"
+                        viewBox="0 0 21 21"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M13.125 5.25L7.875 10.5L13.125 15.75"
+                          stroke="#52A5FC"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                    </a>
+                  </div>
+                  <div class="content__title--element">
+                    <div class="content__title--text">Профиль субъекта</div>
+                  </div>
+                </div>
+              </div>
+              <div class="card__content--body">
+                <div class="user-profile-card__top">
+                  <div class="row">
+                    <div class="col-xl-6">
+                      <div class="user-profile-card__line">
+                        <div class="user-profile-card__line--left"><strong>ФИО</strong></div>
+                        <div class="user-profile-card__line--right">
+                          {{ applicationsUser.first_name }} {{ applicationsUser.last_name }}
+                          {{ applicationsUser.middle_name }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-xl-6" v-if="applicationsUser.name_company">
+                      <div class="user-profile-card__line">
+                        <div class="user-profile-card__line--left">
+                          <strong>Название компании</strong>
+                        </div>
+                        <div class="user-profile-card__line--right">
+                          {{ applicationsUser.name_company }}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="col-xl-6" v-if="applicationsUser.created_at">
+                      <div class="user-profile-card__line">
+                        <div class="user-profile-card__line--left">
+                          <strong>Дата регистрации в системе</strong>
+                        </div>
+                        <div class="user-profile-card__line--right">
+                          {{ applicationsUser.created_at | formatDate }}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="col-xl-6" v-if="applicationsUser.iin_bin">
+                      <div class="user-profile-card__line">
+                        <div class="user-profile-card__line--left"><strong>ИИН</strong></div>
+                        <div class="user-profile-card__line--right">
+                          {{ applicationsUser.iin_bin }}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      class="col-xl-6"
+                      v-if="applicationsUser.user_info && applicationsUser.user_info.obj"
+                    >
+                      <div class="user-profile-card__line">
+                        <div class="user-profile-card__line--left"><strong>Форма</strong></div>
+                        <div class="user-profile-card__line--right">
+                          <span v-if="$i18n.locale == 'ru'">
+                            {{ applicationsUser.user_info.obj.OrgForm['NameRu'] }}
+                          </span>
+                          <span v-if="$i18n.locale == 'kz'">
+                            {{ applicationsUser.user_info.obj.OrgForm['NameKz'] }}
+                          </span>
+                          <span v-if="$i18n.locale == 'en'">
+                            {{ applicationsUser.user_info.obj.OrgForm['NameRu'] }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="col-xl-6" v-if="applicationsUser.email">
+                      <div class="user-profile-card__line">
+                        <div class="user-profile-card__line--left"><strong>Email</strong></div>
+                        <div class="user-profile-card__line--right">
+                          {{ applicationsUser.email }}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      class="col-xl-6"
+                      v-if="applicationsQuota && Object.keys(applicationsQuota).length != 0"
+                    >
+                      <div class="user-profile-card__line">
+                        <div class="user-profile-card__line--left">
+                          <strong>Регион квоты</strong>
+                        </div>
+                        <div class="user-profile-card__line--right">
+                          <span>
+                            {{ regionList(applicationsQuota.region_id) }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      class="col-xl-6"
+                      v-if="applicationsQuota && Object.keys(applicationsQuota).length != 0"
+                    >
+                      <div class="user-profile-card__line">
+                        <div class="user-profile-card__line--left">
+                          <strong>Водоемы квоты</strong>
+                        </div>
+                        <div class="user-profile-card__line--right">
+                          <span v-for="item in applicationsQuota.items">
+                            {{ pondList(item.pond_id) }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      class="col-xl-6"
+                      v-if="applicationsUser.user_info && applicationsUser.user_info.obj"
+                    >
+                      <div class="user-profile-card__line">
+                        <div class="user-profile-card__line--left"><strong>ОКЭД</strong></div>
+                        <div class="user-profile-card__line--right">
+                          {{ applicationsUser.user_info.obj.Activity.OKED }}
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      class="col-xl-6"
+                      v-if="applicationsUser.user_info && applicationsUser.user_info.obj"
+                    >
+                      <div class="user-profile-card__line">
+                        <div class="user-profile-card__line--left"><strong>КАТО</strong></div>
+                        <div class="user-profile-card__line--right">
+                          {{ applicationsUser.user_info.obj.Address.KATO }}
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      class="col-xl-6"
+                      v-if="applicationsUser.user_info && applicationsUser.user_info.obj"
+                    >
+                      <div class="user-profile-card__line">
+                        <div class="user-profile-card__line--left"><strong>Статус</strong></div>
+                        <div class="user-profile-card__line--right">
+                          <span v-if="$i18n.locale == 'ru'">
+                            {{ applicationsUser.user_info.obj.RegStatus['NameRu'] }}
+                          </span>
+                          <span v-if="$i18n.locale == 'kz'">
+                            {{ applicationsUser.user_info.obj.RegStatus['NameKz'] }}
+                          </span>
+                          <span v-if="$i18n.locale == 'en'">
+                            {{ applicationsUser.user_info.obj.RegStatus['NameRu'] }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      class="col-xl-6"
+                      v-if="applicationsUser.user_info && applicationsUser.user_info.obj"
+                    >
+                      <div class="user-profile-card__line">
+                        <div class="user-profile-card__line--left">
+                          <strong>Адрес регистрации</strong>
+                        </div>
+                        <div class="user-profile-card__line--right">
+                          <span v-if="$i18n.locale == 'ru'">
+                            {{ applicationsUser.user_info.obj.Address['DistrictRu'] }}
+                            {{ applicationsUser.user_info.obj.Address['RegionRu'] }}
+                            {{ applicationsUser.user_info.obj.Address['StreetRu'] }}
+                          </span>
+                          <span v-if="$i18n.locale == 'kz'">
+                            {{ applicationsUser.user_info.obj.Address['DistrictKz'] }}
+                            {{ applicationsUser.user_info.obj.Address['RegionKz'] }}
+                            {{ applicationsUser.user_info.obj.Address['StreetKz'] }}
+                          </span>
+                          <span v-if="$i18n.locale == 'en'">
+                            {{ applicationsUser.user_info.obj.Address['DistrictRu'] }}
+                            {{ applicationsUser.user_info.obj.Address['RegionRu'] }}
+                            {{ applicationsUser.user_info.obj.Address['StreetRu'] }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="user-profile-card__body">
+                  <div class="user-profile__tabs">
+                    <ul>
+                      <li
+                        v-bind:class="{ active: tabElement == 'tabElement1', disabled: true }"
+                        v-if="applicationsQuota"
+                      >
+                        <a @click="tabElement = 'tabElement1'">Квоты</a>
+                      </li>
+                      <li v-bind:class="{ active: tabElement == 'tabElement2' }">
+                        <a @click="tabElement = 'tabElement2'">Разрешения</a>
+                      </li>
+                      <li v-bind:class="{ active: tabElement == 'tabElement3' }">
+                        <a @click="tabElement = 'tabElement3'">Журналы</a>
+                      </li>
+                      <li v-bind:class="{ active: tabElement == 'tabElement4', disabled: true }">
+                        <a @click="tabElement = 'tabElement4'">Справки</a>
+                      </li>
+                      <li v-bind:class="{ active: tabElement == 'tabElement5' }">
+                        <a @click="tabElement = 'tabElement5'">{{ $t('sidebar.fine') }}</a>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div class="user-profile__tabs--content">
+                    <div
+                      class="user-profile__tab--item"
+                      v-if="tabElement == 'tabElement1' && applicationsQuota"
+                    >
+                      <div class="table__block--content user-profile__block--content">
+                        <v-data-table
+                          :headers="headers1"
+                          :items="applicationsQuota.items"
+                          :loading="false"
+                          :options.sync="options1"
+                          show-expand
+                          :footer-props="{
+                            'items-per-page-options': [5, 10, 20, 30, 40, 50],
+                          }"
+                        >
+                          <template v-slot:expanded-item="{ headers, item }">
+                            <td
+                              :colspan="headers.length"
+                              style="padding: 0; border-radius: 10px !important"
+                            >
+                              <div class="v-data-table">
+                                <div class="v-data-table__wrapper">
+                                  <table width="100%">
+                                    <thead class="v-data-table-header">
+                                      <tr>
+                                        <th
+                                          style="width: 120px; min-width: 120px; max-width: 120px"
+                                        ></th>
+                                        <th style="width: 100%; min-width: 20vw">Рыбы</th>
+                                        <th
+                                          style="width: 150px; min-width: 150px; max-width: 150px"
+                                        >
+                                          Объем
+                                        </th>
+                                        <!--<th style="width: 150px; min-width: 150px; max-width: 150px;">Освоено квот</th>-->
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      <tr
+                                        v-if="fish.type == 'quota'"
+                                        v-for="fish in item.item.values"
+                                      >
+                                        <td></td>
+                                        <td>{{ fishList(fish.fish_id) }}</td>
+                                        <td>{{ Math.abs(fish.value) }}</td>
+                                        <!--<td>?</td>-->
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            </td>
+                          </template>
+
+                          <template v-slot:item.name="{ item }">
+                            <a href="#">
+                              {{ item.name }}
+                            </a>
+                          </template>
+                          <template v-slot:item.region="{ item }">
+                            {{ regionList(applicationsQuota.region_id) }}
+                          </template>
+                          <template v-slot:item.pond="{ item }">
+                            {{ pondList(item.pond_id) }}
+                          </template>
+                          <template v-slot:item.volume="{ item }">
+                            {{ totalVolumeQuota(item.item.values) }}
+                          </template>
+                          <template v-slot:item.quota="{ item }"> ? </template>
+
+                          <v-alert slot="no-results" :value="true" color="error">
+                            Ваш поиск по запросу не дал результатов.
+                          </v-alert>
+                        </v-data-table>
+                      </div>
+                    </div>
+
+                    <div class="user-profile__tab--item" v-if="tabElement == 'tabElement2'">
+                      <div class="table__block--content user-profile__block--content">
+                        <div class="user-profile__block--update">
+                          <button
+                            class="user-profile--update"
+                            @click="permissionsIntegration"
+                            :disabled="permissionsIntegrateUpdate"
+                          >
+                            <svg
+                              width="19"
+                              height="19"
+                              viewBox="0 0 19 19"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M16.625 1.58334V6.33334H11.875"
+                                stroke="#6D90B4"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              />
+                              <path
+                                d="M2.375 9.5C2.37625 8.12512 2.77527 6.77997 3.52391 5.6268C4.27255 4.47362 5.33885 3.56168 6.59419 3.00096C7.84953 2.44024 9.24029 2.2547 10.5987 2.46671C11.9572 2.67873 13.2252 3.27925 14.25 4.19583L16.625 6.33333"
+                                stroke="#6D90B4"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              />
+                              <path
+                                d="M2.375 17.4167V12.6667H7.125"
+                                stroke="#6D90B4"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              />
+                              <path
+                                d="M16.625 9.5C16.6237 10.8749 16.2247 12.22 15.4761 13.3732C14.7274 14.5264 13.6611 15.4383 12.4058 15.999C11.1505 16.5598 9.75971 16.7453 8.40128 16.5333C7.04285 16.3213 5.77477 15.7208 4.75 14.8042L2.375 12.6667"
+                                stroke="#6D90B4"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              />
+                            </svg>
+                            обновить
+                          </button>
+                        </div>
+
+                        <v-data-table
+                          :headers="headers2"
+                          :items="permissionsIntegrateList"
+                          :loading="false"
+                          :options.sync="options2"
+                          :footer-props="{
+                            'items-per-page-options': [5, 10, 20, 30, 40, 50],
+                          }"
+                          v-if="permissionsIntegrateList"
+                        >
+                        </v-data-table>
+
+                        <div
+                          class="form__block--line form__messages"
+                          :class="{
+                            'form__messages--error': permissionsMessage.status != 200,
+                            'form__messages--success': permissionsMessage.status == 200,
+                          }"
+                          v-if="permissionsMessage.status"
+                        >
+                          <label class="form__block--input">
+                            <span class="form__block--title">
+                              {{ permissionsMessage.text }}
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="user-profile__tab--item" v-if="tabElement == 'tabElement3'">
+                      <div class="table__block--content user-profile__block--content">
+                        <div class="user-profile__tabs--children">
+                          <ul>
+                            <li v-bind:class="{ active: tabElementChildren == 'tabElement1' }">
+                              <a @click="tabElementChildren = 'tabElement1'">{{
+                                $t('sidebar.magazines_trade')
+                              }}</a>
+                            </li>
+                            <li
+                              v-bind:class="{
+                                active: tabElementChildren == 'tabElement2',
+                                disabled: true,
+                              }"
+                            >
+                              <a @click="tabElementChildren = 'tabElement2'">{{
+                                $t('sidebar.magazines_grown')
+                              }}</a>
+                            </li>
+                            <li
+                              v-bind:class="{
+                                active: tabElementChildren == 'tabElement3',
+                                disabled: true,
+                              }"
+                            >
+                              <a @click="tabElementChildren = 'tabElement3'"
+                                >{{ $t('sidebar.magazines_purchased') }}
+                              </a>
+                            </li>
+                            <li
+                              v-bind:class="{
+                                active: tabElementChildren == 'tabElement4',
+                                disabled: true,
+                              }"
+                            >
+                              <a @click="tabElementChildren = 'tabElement4'"
+                                >{{ $t('sidebar.magazines_implemented') }}
+                              </a>
+                            </li>
+                          </ul>
+                        </div>
+
+                        <div v-if="tabElementChildren == 'tabElement1'">
+                          <div class="user-profile__block--update">
+                            <button
+                              class="user-profile--update"
+                              @click="apiGetUserTrade"
+                              :disabled="tradeIntegrateUpdate"
+                            >
+                              <svg
+                                width="19"
+                                height="19"
+                                viewBox="0 0 19 19"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M16.625 1.58334V6.33334H11.875"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M2.375 9.5C2.37625 8.12512 2.77527 6.77997 3.52391 5.6268C4.27255 4.47362 5.33885 3.56168 6.59419 3.00096C7.84953 2.44024 9.24029 2.2547 10.5987 2.46671C11.9572 2.67873 13.2252 3.27925 14.25 4.19583L16.625 6.33333"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M2.375 17.4167V12.6667H7.125"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M16.625 9.5C16.6237 10.8749 16.2247 12.22 15.4761 13.3732C14.7274 14.5264 13.6611 15.4383 12.4058 15.999C11.1505 16.5598 9.75971 16.7453 8.40128 16.5333C7.04285 16.3213 5.77477 15.7208 4.75 14.8042L2.375 12.6667"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                              </svg>
+                              обновить
+                            </button>
+                          </div>
+
+                          <v-data-table
+                            :headers="getHeaders3"
+                            :items="applicationsTrade"
+                            :loading="false"
+                            :options.sync="options3"
+                            show-expand
+                            :server-items-length="totalTradeItems"
+                            :footer-props="{
+                              'items-per-page-options': [5, 10, 20, 30, 40, 50],
+                            }"
+                            @update:options="paginationUserTradeList"
+                            v-if="applicationsTrade"
+                          >
+                            <template v-slot:item.name="{ item }">
+                              <router-link :to="'/' + $i18n.locale + '/account/trade/' + item.id">
+                                Улов от {{ item.catch_at | formatOnlyDate }}
+                              </router-link>
+                            </template>
+                            <template v-slot:item.brigade_id="{ item }">
+                              {{ getBrigadeName(item.brigade_id) }}
+                            </template>
+                            <template v-slot:item.status="{ item }">
+                              <a
+                                class="tb__table--status"
+                                :class="{
+                                  'tb__status--success': item.status == 'active',
+                                  'tb__status--error': item.status == 'deleted',
+                                }"
+                              >
+                                {{ item.status == 'active' ? 'Отправленный' : '' }}
+                                {{ item.status == 'deleted' ? 'Заблокирован' : '' }}
+                                {{ item.status == 'new' ? 'Новый' : '' }}
+                              </a>
+                            </template>
+                            <template v-slot:item.fish="{ header, item }">
+                              {{ findFish(item.fishs, header.fish_id) }}
+                            </template>
+                          </v-data-table>
+                        </div>
+                        <div v-if="tabElementChildren == 'tabElement2'">
+                          <div class="user-profile__block--update">
+                            <button
+                              class="user-profile--update"
+                              @click="apiGetUserGrownTrade"
+                              :disabled="grownTradeUpdatee"
+                            >
+                              <svg
+                                width="19"
+                                height="19"
+                                viewBox="0 0 19 19"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M16.625 1.58334V6.33334H11.875"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M2.375 9.5C2.37625 8.12512 2.77527 6.77997 3.52391 5.6268C4.27255 4.47362 5.33885 3.56168 6.59419 3.00096C7.84953 2.44024 9.24029 2.2547 10.5987 2.46671C11.9572 2.67873 13.2252 3.27925 14.25 4.19583L16.625 6.33333"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M2.375 17.4167V12.6667H7.125"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M16.625 9.5C16.6237 10.8749 16.2247 12.22 15.4761 13.3732C14.7274 14.5264 13.6611 15.4383 12.4058 15.999C11.1505 16.5598 9.75971 16.7453 8.40128 16.5333C7.04285 16.3213 5.77477 15.7208 4.75 14.8042L2.375 12.6667"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                              </svg>
+                              обновить
+                            </button>
+                          </div>
+
+                          <v-data-table
+                            :headers="[
+                              { text: 'Id', value: 'id', width: '50px' },
+                              { text: $t('headers.name'), value: 'name', width: '15vw' },
+                              { text: 'Номер справки о происхождении', value: 'reference' },
+                              { text: 'Дата забоя', value: 'catch_at' },
+                              { text: 'Объем', value: 'volume', width: '150px' },
+                            ]"
+                            :items="applicationsGrownTrade"
+                            :loading="false"
+                            :options.sync="options3"
+                            show-expand
+                            :footer-props="{
+                              'items-per-page-options': [5, 10, 20, 30, 40, 50],
+                            }"
+                            v-if="applicationsGrownTrade"
+                          >
+                            <template v-slot:expanded-item="{ headers, item }">
+                              <td
+                                :colspan="headers.length"
+                                style="padding: 0; border-radius: 10px !important"
+                              >
+                                <div class="v-data-table">
+                                  <div class="v-data-table__wrapper">
+                                    <table width="100%">
+                                      <thead class="v-data-table-header">
+                                        <tr>
+                                          <th
+                                            style="width: 120px; min-width: 120px; max-width: 120px"
+                                          ></th>
+                                          <th style="width: 100%; min-width: 20vw">Рыбы</th>
+                                          <th
+                                            style="width: 150px; min-width: 150px; max-width: 150px"
+                                          >
+                                            Объем
+                                          </th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        <tr v-for="fish in item.fishs">
+                                          <td></td>
+                                          <td>{{ fishList(fish.fish_id) }}</td>
+                                          <td>{{ Math.abs(fish.value) }}</td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              </td>
+                            </template>
+                            <template v-slot:item.name="{ item }">
+                              Улов от {{ item.catch_at | formatOnlyDate }}
+                            </template>
+                            <template v-slot:item.volume="{ item }">
+                              {{ totalFishVolume(item.fishs) }}
+                            </template>
+                            <template v-slot:item.catch_at="{ item }">
+                              {{ item.catch_at | formatDate }}
+                            </template>
+                            <v-alert slot="no-results" :value="true" color="error">
+                              Ваш поиск по запросу не дал результатов.
+                            </v-alert>
+                          </v-data-table>
+                          <div
+                            class="form__block--line form__messages"
+                            :class="{
+                              'form__messages--error': grownTradeMessage.status != 200,
+                              'form__messages--success': grownTradeMessage.status == 200,
+                            }"
+                            v-if="grownTradeMessage.status"
+                          >
+                            <label class="form__block--input">
+                              <span class="form__block--title">
+                                {{ grownTradeMessage.text }}
+                              </span>
+                            </label>
+                          </div>
+                        </div>
+                        <div v-if="tabElementChildren == 'tabElement3'">
+                          <div class="user-profile__block--update">
+                            <button
+                              class="user-profile--update"
+                              @click="apiGetUserPurchasedTrade"
+                              :disabled="purchasedTradeUpdatee"
+                            >
+                              <svg
+                                width="19"
+                                height="19"
+                                viewBox="0 0 19 19"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M16.625 1.58334V6.33334H11.875"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M2.375 9.5C2.37625 8.12512 2.77527 6.77997 3.52391 5.6268C4.27255 4.47362 5.33885 3.56168 6.59419 3.00096C7.84953 2.44024 9.24029 2.2547 10.5987 2.46671C11.9572 2.67873 13.2252 3.27925 14.25 4.19583L16.625 6.33333"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M2.375 17.4167V12.6667H7.125"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M16.625 9.5C16.6237 10.8749 16.2247 12.22 15.4761 13.3732C14.7274 14.5264 13.6611 15.4383 12.4058 15.999C11.1505 16.5598 9.75971 16.7453 8.40128 16.5333C7.04285 16.3213 5.77477 15.7208 4.75 14.8042L2.375 12.6667"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                              </svg>
+                              обновить
+                            </button>
+                          </div>
+
+                          <v-data-table
+                            :headers="[
+                              { text: 'Id', value: 'id', width: '50px' },
+                              { text: this.$t('headers.name'), value: 'name', width: '15vw' },
+                              { text: 'Номер справки о происхождении', value: 'reference' },
+                              { text: 'Дата закупки', value: 'catch_at' },
+                              { text: 'Объем', value: 'volume', width: '150px' },
+                            ]"
+                            :items="applicationsPurchasedTrade"
+                            :loading="false"
+                            :options.sync="options3"
+                            show-expand
+                            :footer-props="{
+                              'items-per-page-options': [5, 10, 20, 30, 40, 50],
+                            }"
+                            v-if="applicationsPurchasedTrade"
+                          >
+                            <template v-slot:expanded-item="{ headers, item }">
+                              <td
+                                :colspan="headers.length"
+                                style="padding: 0; border-radius: 10px !important"
+                              >
+                                <div class="v-data-table">
+                                  <div class="v-data-table__wrapper">
+                                    <table width="100%">
+                                      <thead class="v-data-table-header">
+                                        <tr>
+                                          <th
+                                            style="width: 120px; min-width: 120px; max-width: 120px"
+                                          ></th>
+                                          <th style="width: 100%; min-width: 20vw">Рыбы</th>
+                                          <th
+                                            style="width: 150px; min-width: 150px; max-width: 150px"
+                                          >
+                                            Объем
+                                          </th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        <tr v-for="fish in item.fishs">
+                                          <td></td>
+                                          <td>{{ fishList(fish.fish_id) }}</td>
+                                          <td>{{ Math.abs(fish.value) }}</td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              </td>
+                            </template>
+                            <template v-slot:item.name="{ item }">
+                              Улов от {{ item.catch_at | formatOnlyDate }}
+                            </template>
+                            <template v-slot:item.volume="{ item }">
+                              {{ totalFishVolume(item.fishs) }}
+                            </template>
+                            <template v-slot:item.catch_at="{ item }">
+                              {{ item.catch_at | formatDate }}
+                            </template>
+                            <v-alert slot="no-results" :value="true" color="error">
+                              Ваш поиск по запросу не дал результатов.
+                            </v-alert>
+                          </v-data-table>
+                          <div
+                            class="form__block--line form__messages"
+                            :class="{
+                              'form__messages--error': purchasedTradeMessage.status != 200,
+                              'form__messages--success': purchasedTradeMessage.status == 200,
+                            }"
+                            v-if="purchasedTradeMessage.status"
+                          >
+                            <label class="form__block--input">
+                              <span class="form__block--title">
+                                {{ purchasedTradeMessage.text }}
+                              </span>
+                            </label>
+                          </div>
+                        </div>
+                        <div v-if="tabElementChildren == 'tabElement4'">
+                          <div class="user-profile__block--update">
+                            <button
+                              class="user-profile--update"
+                              @click="apiGetUserImplementedTrade"
+                              :disabled="implementedTradeUpdatee"
+                            >
+                              <svg
+                                width="19"
+                                height="19"
+                                viewBox="0 0 19 19"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M16.625 1.58334V6.33334H11.875"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M2.375 9.5C2.37625 8.12512 2.77527 6.77997 3.52391 5.6268C4.27255 4.47362 5.33885 3.56168 6.59419 3.00096C7.84953 2.44024 9.24029 2.2547 10.5987 2.46671C11.9572 2.67873 13.2252 3.27925 14.25 4.19583L16.625 6.33333"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M2.375 17.4167V12.6667H7.125"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M16.625 9.5C16.6237 10.8749 16.2247 12.22 15.4761 13.3732C14.7274 14.5264 13.6611 15.4383 12.4058 15.999C11.1505 16.5598 9.75971 16.7453 8.40128 16.5333C7.04285 16.3213 5.77477 15.7208 4.75 14.8042L2.375 12.6667"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                              </svg>
+                              обновить
+                            </button>
+                          </div>
+
+                          <v-data-table
+                            :headers="[
+                              { text: 'Id', value: 'id', width: '50px' },
+                              { text: $t('headers.name'), value: 'name', width: '15vw' },
+                              { text: 'Номер справки о происхождении', value: 'reference' },
+                              { text: 'Дата реализации', value: 'catch_at' },
+                              { text: 'Объем', value: 'volume', width: '150px' },
+                            ]"
+                            :items="applicationsImplementedTrade"
+                            :loading="false"
+                            :options.sync="options3"
+                            show-expand
+                            :footer-props="{
+                              'items-per-page-options': [5, 10, 20, 30, 40, 50],
+                            }"
+                            v-if="applicationsImplementedTrade"
+                          >
+                            <template v-slot:expanded-item="{ headers, item }">
+                              <td
+                                :colspan="headers.length"
+                                style="padding: 0; border-radius: 10px !important"
+                              >
+                                <div class="v-data-table">
+                                  <div class="v-data-table__wrapper">
+                                    <table width="100%">
+                                      <thead class="v-data-table-header">
+                                        <tr>
+                                          <th
+                                            style="width: 120px; min-width: 120px; max-width: 120px"
+                                          ></th>
+                                          <th style="width: 100%; min-width: 20vw">Рыбы</th>
+                                          <th
+                                            style="width: 150px; min-width: 150px; max-width: 150px"
+                                          >
+                                            Объем
+                                          </th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        <tr v-for="fish in item.fishs">
+                                          <td></td>
+                                          <td>{{ fishList(fish.fish_id) }}</td>
+                                          <td>{{ Math.abs(fish.value) }}</td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              </td>
+                            </template>
+                            <template v-slot:item.name="{ item }">
+                              Улов от {{ item.catch_at | formatOnlyDate }}
+                            </template>
+                            <template v-slot:item.volume="{ item }">
+                              {{ totalFishVolume(item.fishs) }}
+                            </template>
+                            <template v-slot:item.catch_at="{ item }">
+                              {{ item.catch_at | formatDate }}
+                            </template>
+                            <v-alert slot="no-results" :value="true" color="error">
+                              Ваш поиск по запросу не дал результатов.
+                            </v-alert>
+                          </v-data-table>
+                          <div
+                            class="form__block--line form__messages"
+                            :class="{
+                              'form__messages--error': implementedTradeMessage.status != 200,
+                              'form__messages--success': implementedTradeMessage.status == 200,
+                            }"
+                            v-if="implementedTradeMessage.status"
+                          >
+                            <label class="form__block--input">
+                              <span class="form__block--title">
+                                {{ implementedTradeMessage.text }}
+                              </span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="user-profile__tab--item" v-if="tabElement == 'tabElement4'">
+                      <div class="table__block--content user-profile__block--content">
+                        <div class="user-profile__tabs--children">
+                          <ul>
+                            <li v-bind:class="{ active: tabElementChildre2 == 'tabElement1' }">
+                              <a @click="tabElementChildre2 = 'tabElement1'">О происхождении</a>
+                            </li>
+                            <li v-bind:class="{ active: tabElementChildre2 == 'tabElement2' }">
+                              <a @click="tabElementChildre2 = 'tabElement2'">Ветеринарные</a>
+                            </li>
+                            <li v-bind:class="{ active: tabElementChildre2 == 'tabElement3' }">
+                              <a @click="tabElementChildre2 = 'tabElement3'">Вет. сертификат</a>
+                            </li>
+                          </ul>
+                        </div>
+
+                        <div v-if="tabElementChildre2 == 'tabElement1'">
+                          <div class="user-profile__block--update">
+                            <button
+                              class="user-profile--update"
+                              @click="permissionsIntegration"
+                              :disabled="permissionsIntegrateUpdate"
+                            >
+                              <svg
+                                width="19"
+                                height="19"
+                                viewBox="0 0 19 19"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M16.625 1.58334V6.33334H11.875"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M2.375 9.5C2.37625 8.12512 2.77527 6.77997 3.52391 5.6268C4.27255 4.47362 5.33885 3.56168 6.59419 3.00096C7.84953 2.44024 9.24029 2.2547 10.5987 2.46671C11.9572 2.67873 13.2252 3.27925 14.25 4.19583L16.625 6.33333"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M2.375 17.4167V12.6667H7.125"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M16.625 9.5C16.6237 10.8749 16.2247 12.22 15.4761 13.3732C14.7274 14.5264 13.6611 15.4383 12.4058 15.999C11.1505 16.5598 9.75971 16.7453 8.40128 16.5333C7.04285 16.3213 5.77477 15.7208 4.75 14.8042L2.375 12.6667"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                              </svg>
+                              обновить
+                            </button>
+                          </div>
+
+                          <v-data-table
+                            :headers="[
+                              { text: 'Название', value: 'ActivityType' },
+                              { text: 'Номер', value: 'GlobalUniqueNumber' },
+                              { text: 'Никад', value: 'Nikad' },
+                              { text: this.$t('headers.status'), value: 'Status' },
+                              { text: 'Дата выпуска', value: 'IssueDate', width: '100px' },
+                              {
+                                text: 'Результаты PDF',
+                                value: 'DocumentUrl',
+                                align: 'center',
+                                sortable: false,
+                                width: '150px',
+                              },
+                            ]"
+                            :items="referenceOriginIntegrateList"
+                            :loading="false"
+                            :options.sync="options2"
+                            :footer-props="{
+                              'items-per-page-options': [5, 10, 20, 30, 40, 50],
+                            }"
+                            v-if="referenceOriginIntegrateList"
+                          >
+                            <template v-slot:item.ActivityType="{ item }">
+                              <span v-if="$i18n.locale == 'ru'">
+                                {{ item.ActivityType['NameRu'] }}
+                              </span>
+                              <span v-if="$i18n.locale == 'kz'">
+                                {{ item.ActivityType['NameKz'] }}
+                              </span>
+                              <span v-if="$i18n.locale == 'en'">
+                                {{ item.ActivityType['NameEn'] }}
+                              </span>
+                            </template>
+                            <template v-slot:item.GlobalUniqueNumber="{ item }">
+                              {{ item.GlobalUniqueNumber }}
+                            </template>
+                            <template v-slot:item.IssueDate="{ item }">
+                              {{ item.IssueDate | formatDate }}
+                            </template>
+                            <template v-slot:item.Status="{ item }">
+                              <span v-if="$i18n.locale == 'ru'">
+                                {{ item.Status['NameRu'] }}
+                              </span>
+                              <span v-if="$i18n.locale == 'kz'">
+                                {{ item.Status['NameKz'] }}
+                              </span>
+                              <span v-if="$i18n.locale == 'en'">
+                                {{ item.Status['NameRu'] }}
+                              </span>
+                            </template>
+                            <template v-slot:item.DocumentUrl="{ item }">
+                              <a
+                                :href="item.DocumentUrl"
+                                class="tb__table--btn tb__table--delete"
+                                target="_blank"
+                                v-tooltip.top-center="{
+                                  content: 'Скачать',
+                                  class: ['tooltip__btn'],
+                                }"
+                              >
+                                <svg
+                                  width="30"
+                                  height="30"
+                                  viewBox="0 0 30 30"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M4.30371 7.29504V28.2422C4.30371 29.209 5.09473 30 6.06152 30H24.0456C25.0124 30 25.8034 29.209 25.8034 28.2422V1.75781C25.8034 0.791016 25.0124 0 24.0456 0H11.5988"
+                                    fill="#E74C3C"
+                                  />
+                                  <path
+                                    d="M4.30371 7.29504H9.84097C10.8078 7.29504 11.5988 6.50402 11.5988 5.53723V0"
+                                    fill="#C0392B"
+                                  />
+                                  <path
+                                    d="M2.39673 19.6533H4.30311V17.1387L2.22461 19.7278H2.22496C2.26012 19.6818 2.31962 19.6533 2.39673 19.6533Z"
+                                    fill="#262626"
+                                  />
+                                  <path
+                                    d="M27.7091 19.6533H25.8027V17.1387L27.8812 19.7278H27.8809C27.8457 19.6818 27.7862 19.6533 27.7091 19.6533Z"
+                                    fill="#262626"
+                                  />
+                                  <path
+                                    d="M25.906 25.2384C25.8494 25.3893 25.6712 25.5127 25.5101 25.5127H4.59631C4.43517 25.5127 4.25699 25.3893 4.20039 25.2384L2.20694 19.9276C2.15031 19.7767 2.23583 19.6533 2.39696 19.6533H27.7095C27.8706 19.6533 27.9561 19.7767 27.8995 19.9276L25.906 25.2384Z"
+                                    fill="#C0392B"
+                                  />
+                                  <path
+                                    d="M9.82227 23.9743C9.82227 23.8274 9.86574 23.7141 9.95275 23.6343C10.0398 23.5545 10.1662 23.5146 10.3323 23.5146C10.4904 23.5146 10.6116 23.5545 10.6963 23.6343C10.7809 23.7142 10.8232 23.8275 10.8232 23.9743C10.8232 24.118 10.7797 24.2301 10.6927 24.3107C10.6056 24.3913 10.4856 24.4316 10.3323 24.4316C10.1742 24.4316 10.0497 24.3917 9.95876 24.3119C9.86776 24.2321 9.82227 24.1196 9.82227 23.9743Z"
+                                    fill="white"
+                                  />
+                                  <path
+                                    d="M13.9527 21.9844C13.9527 22.3756 13.8373 22.6777 13.6067 22.8908C13.376 23.1039 13.0483 23.2104 12.6237 23.2104H12.3579V24.3718H11.4121V20.871H12.6237C13.0659 20.871 13.3979 20.9676 13.6198 21.1607C13.8417 21.3539 13.9527 21.6285 13.9527 21.9844ZM12.358 22.4394H12.5304C12.6725 22.4394 12.7854 22.3995 12.8692 22.3197C12.953 22.2399 12.9949 22.1297 12.9949 21.9892C12.9949 21.753 12.864 21.6348 12.6022 21.6348H12.358V22.4394Z"
+                                    fill="white"
+                                  />
+                                  <path
+                                    d="M17.4824 22.5471C17.4824 23.1314 17.3216 23.5816 16.9999 23.8977C16.6782 24.2137 16.226 24.3718 15.6434 24.3718H14.5107V20.871H15.7224C16.2843 20.871 16.7181 21.0146 17.0238 21.302C17.3295 21.5893 17.4824 22.0044 17.4824 22.5471ZM16.5006 22.5807C16.5006 22.2598 16.4372 22.022 16.3102 21.8671C16.1833 21.7123 15.9906 21.6348 15.732 21.6348H15.4566V23.596H15.6673C15.9547 23.596 16.1654 23.5126 16.2995 23.3457C16.4336 23.1789 16.5006 22.9239 16.5006 22.5807Z"
+                                    fill="white"
+                                  />
+                                  <path
+                                    d="M19.0408 24.3718H18.1094V20.871H20.1782V21.63H19.0408V22.2981H20.0897V23.0572H19.0408V24.3718Z"
+                                    fill="white"
+                                  />
+                                  <path
+                                    d="M21.3867 10.8346C21.3867 11.0763 21.123 11.274 20.8007 11.274H9.22461C8.90234 11.274 8.63867 11.0763 8.63867 10.8346C8.63867 10.5929 8.90234 10.3951 9.22461 10.3951H20.8007C21.123 10.3951 21.3867 10.5929 21.3867 10.8346Z"
+                                    fill="white"
+                                  />
+                                  <path
+                                    d="M21.3622 13.4713C21.3622 13.713 21.0986 13.9108 20.7763 13.9108H9.2002C8.87793 13.9108 8.61426 13.713 8.61426 13.4713C8.61426 13.2296 8.87793 13.0319 9.2002 13.0319H20.7763C21.0986 13.0319 21.3622 13.2296 21.3622 13.4713Z"
+                                    fill="white"
+                                  />
+                                  <path
+                                    d="M21.3867 16.1137C21.3867 16.3554 21.123 16.5532 20.8007 16.5532H9.22461C8.90234 16.5532 8.63867 16.3554 8.63867 16.1137C8.63867 15.872 8.90234 15.6743 9.22461 15.6743H20.8007C21.123 15.6743 21.3867 15.872 21.3867 16.1137Z"
+                                    fill="white"
+                                  />
+                                </svg>
+                              </a>
+                            </template>
+                            <v-alert slot="no-results" :value="true" color="error">
+                              Ваш поиск по запросу не дал результатов.
+                            </v-alert>
+                          </v-data-table>
+                        </div>
+                        <div v-if="tabElementChildre2 == 'tabElement2'">
+                          <div class="user-profile__block--update">
+                            <button
+                              class="user-profile--update"
+                              @click="permissionsIntegration"
+                              :disabled="permissionsIntegrateUpdate"
+                            >
+                              <svg
+                                width="19"
+                                height="19"
+                                viewBox="0 0 19 19"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M16.625 1.58334V6.33334H11.875"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M2.375 9.5C2.37625 8.12512 2.77527 6.77997 3.52391 5.6268C4.27255 4.47362 5.33885 3.56168 6.59419 3.00096C7.84953 2.44024 9.24029 2.2547 10.5987 2.46671C11.9572 2.67873 13.2252 3.27925 14.25 4.19583L16.625 6.33333"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M2.375 17.4167V12.6667H7.125"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M16.625 9.5C16.6237 10.8749 16.2247 12.22 15.4761 13.3732C14.7274 14.5264 13.6611 15.4383 12.4058 15.999C11.1505 16.5598 9.75971 16.7453 8.40128 16.5333C7.04285 16.3213 5.77477 15.7208 4.75 14.8042L2.375 12.6667"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                              </svg>
+                              обновить
+                            </button>
+                          </div>
+
+                          <v-data-table
+                            :headers="[
+                              { text: 'Название', value: 'ActivityType' },
+                              { text: 'Номер', value: 'GlobalUniqueNumber' },
+                              { text: 'Никад', value: 'Nikad' },
+                              { text: this.$t('headers.status'), value: 'Status' },
+                              { text: 'Дата выпуска', value: 'IssueDate', width: '100px' },
+                              {
+                                text: 'Результаты PDF',
+                                value: 'DocumentUrl',
+                                align: 'center',
+                                sortable: false,
+                                width: '150px',
+                              },
+                            ]"
+                            :items="referenceVeterinaryIntegrateList"
+                            :loading="false"
+                            :options.sync="options2"
+                            :footer-props="{
+                              'items-per-page-options': [5, 10, 20, 30, 40, 50],
+                            }"
+                            v-if="referenceVeterinaryIntegrateList"
+                          >
+                            <template v-slot:item.ActivityType="{ item }">
+                              <span v-if="$i18n.locale == 'ru'">
+                                {{ item.ActivityType['NameRu'] }}
+                              </span>
+                              <span v-if="$i18n.locale == 'kz'">
+                                {{ item.ActivityType['NameKz'] }}
+                              </span>
+                              <span v-if="$i18n.locale == 'en'">
+                                {{ item.ActivityType['NameEn'] }}
+                              </span>
+                            </template>
+                            <template v-slot:item.GlobalUniqueNumber="{ item }">
+                              {{ item.GlobalUniqueNumber }}
+                            </template>
+                            <template v-slot:item.IssueDate="{ item }">
+                              {{ item.IssueDate | formatDate }}
+                            </template>
+                            <template v-slot:item.Status="{ item }">
+                              <span v-if="$i18n.locale == 'ru'">
+                                {{ item.Status['NameRu'] }}
+                              </span>
+                              <span v-if="$i18n.locale == 'kz'">
+                                {{ item.Status['NameKz'] }}
+                              </span>
+                              <span v-if="$i18n.locale == 'en'">
+                                {{ item.Status['NameRu'] }}
+                              </span>
+                            </template>
+                            <template v-slot:item.DocumentUrl="{ item }">
+                              <a
+                                :href="item.DocumentUrl"
+                                class="tb__table--btn tb__table--delete"
+                                target="_blank"
+                                v-tooltip.top-center="{
+                                  content: 'Скачать',
+                                  class: ['tooltip__btn'],
+                                }"
+                              >
+                                <svg
+                                  width="30"
+                                  height="30"
+                                  viewBox="0 0 30 30"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M4.30371 7.29504V28.2422C4.30371 29.209 5.09473 30 6.06152 30H24.0456C25.0124 30 25.8034 29.209 25.8034 28.2422V1.75781C25.8034 0.791016 25.0124 0 24.0456 0H11.5988"
+                                    fill="#E74C3C"
+                                  />
+                                  <path
+                                    d="M4.30371 7.29504H9.84097C10.8078 7.29504 11.5988 6.50402 11.5988 5.53723V0"
+                                    fill="#C0392B"
+                                  />
+                                  <path
+                                    d="M2.39673 19.6533H4.30311V17.1387L2.22461 19.7278H2.22496C2.26012 19.6818 2.31962 19.6533 2.39673 19.6533Z"
+                                    fill="#262626"
+                                  />
+                                  <path
+                                    d="M27.7091 19.6533H25.8027V17.1387L27.8812 19.7278H27.8809C27.8457 19.6818 27.7862 19.6533 27.7091 19.6533Z"
+                                    fill="#262626"
+                                  />
+                                  <path
+                                    d="M25.906 25.2384C25.8494 25.3893 25.6712 25.5127 25.5101 25.5127H4.59631C4.43517 25.5127 4.25699 25.3893 4.20039 25.2384L2.20694 19.9276C2.15031 19.7767 2.23583 19.6533 2.39696 19.6533H27.7095C27.8706 19.6533 27.9561 19.7767 27.8995 19.9276L25.906 25.2384Z"
+                                    fill="#C0392B"
+                                  />
+                                  <path
+                                    d="M9.82227 23.9743C9.82227 23.8274 9.86574 23.7141 9.95275 23.6343C10.0398 23.5545 10.1662 23.5146 10.3323 23.5146C10.4904 23.5146 10.6116 23.5545 10.6963 23.6343C10.7809 23.7142 10.8232 23.8275 10.8232 23.9743C10.8232 24.118 10.7797 24.2301 10.6927 24.3107C10.6056 24.3913 10.4856 24.4316 10.3323 24.4316C10.1742 24.4316 10.0497 24.3917 9.95876 24.3119C9.86776 24.2321 9.82227 24.1196 9.82227 23.9743Z"
+                                    fill="white"
+                                  />
+                                  <path
+                                    d="M13.9527 21.9844C13.9527 22.3756 13.8373 22.6777 13.6067 22.8908C13.376 23.1039 13.0483 23.2104 12.6237 23.2104H12.3579V24.3718H11.4121V20.871H12.6237C13.0659 20.871 13.3979 20.9676 13.6198 21.1607C13.8417 21.3539 13.9527 21.6285 13.9527 21.9844ZM12.358 22.4394H12.5304C12.6725 22.4394 12.7854 22.3995 12.8692 22.3197C12.953 22.2399 12.9949 22.1297 12.9949 21.9892C12.9949 21.753 12.864 21.6348 12.6022 21.6348H12.358V22.4394Z"
+                                    fill="white"
+                                  />
+                                  <path
+                                    d="M17.4824 22.5471C17.4824 23.1314 17.3216 23.5816 16.9999 23.8977C16.6782 24.2137 16.226 24.3718 15.6434 24.3718H14.5107V20.871H15.7224C16.2843 20.871 16.7181 21.0146 17.0238 21.302C17.3295 21.5893 17.4824 22.0044 17.4824 22.5471ZM16.5006 22.5807C16.5006 22.2598 16.4372 22.022 16.3102 21.8671C16.1833 21.7123 15.9906 21.6348 15.732 21.6348H15.4566V23.596H15.6673C15.9547 23.596 16.1654 23.5126 16.2995 23.3457C16.4336 23.1789 16.5006 22.9239 16.5006 22.5807Z"
+                                    fill="white"
+                                  />
+                                  <path
+                                    d="M19.0408 24.3718H18.1094V20.871H20.1782V21.63H19.0408V22.2981H20.0897V23.0572H19.0408V24.3718Z"
+                                    fill="white"
+                                  />
+                                  <path
+                                    d="M21.3867 10.8346C21.3867 11.0763 21.123 11.274 20.8007 11.274H9.22461C8.90234 11.274 8.63867 11.0763 8.63867 10.8346C8.63867 10.5929 8.90234 10.3951 9.22461 10.3951H20.8007C21.123 10.3951 21.3867 10.5929 21.3867 10.8346Z"
+                                    fill="white"
+                                  />
+                                  <path
+                                    d="M21.3622 13.4713C21.3622 13.713 21.0986 13.9108 20.7763 13.9108H9.2002C8.87793 13.9108 8.61426 13.713 8.61426 13.4713C8.61426 13.2296 8.87793 13.0319 9.2002 13.0319H20.7763C21.0986 13.0319 21.3622 13.2296 21.3622 13.4713Z"
+                                    fill="white"
+                                  />
+                                  <path
+                                    d="M21.3867 16.1137C21.3867 16.3554 21.123 16.5532 20.8007 16.5532H9.22461C8.90234 16.5532 8.63867 16.3554 8.63867 16.1137C8.63867 15.872 8.90234 15.6743 9.22461 15.6743H20.8007C21.123 15.6743 21.3867 15.872 21.3867 16.1137Z"
+                                    fill="white"
+                                  />
+                                </svg>
+                              </a>
+                            </template>
+                            <v-alert slot="no-results" :value="true" color="error">
+                              Ваш поиск по запросу не дал результатов.
+                            </v-alert>
+                          </v-data-table>
+                        </div>
+                        <div v-if="tabElementChildre2 == 'tabElement3'">
+                          <div class="user-profile__block--update">
+                            <button
+                              class="user-profile--update"
+                              @click="permissionsIntegration"
+                              :disabled="permissionsIntegrateUpdate"
+                            >
+                              <svg
+                                width="19"
+                                height="19"
+                                viewBox="0 0 19 19"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M16.625 1.58334V6.33334H11.875"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M2.375 9.5C2.37625 8.12512 2.77527 6.77997 3.52391 5.6268C4.27255 4.47362 5.33885 3.56168 6.59419 3.00096C7.84953 2.44024 9.24029 2.2547 10.5987 2.46671C11.9572 2.67873 13.2252 3.27925 14.25 4.19583L16.625 6.33333"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M2.375 17.4167V12.6667H7.125"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                                <path
+                                  d="M16.625 9.5C16.6237 10.8749 16.2247 12.22 15.4761 13.3732C14.7274 14.5264 13.6611 15.4383 12.4058 15.999C11.1505 16.5598 9.75971 16.7453 8.40128 16.5333C7.04285 16.3213 5.77477 15.7208 4.75 14.8042L2.375 12.6667"
+                                  stroke="#6D90B4"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
+                              </svg>
+                              обновить
+                            </button>
+                          </div>
+
+                          <v-data-table
+                            :headers="[
+                              { text: 'Название', value: 'ActivityType' },
+                              { text: 'Номер', value: 'GlobalUniqueNumber' },
+                              { text: 'Никад', value: 'Nikad' },
+                              { text: this.$t('headers.status'), value: 'Status' },
+                              { text: 'Дата выпуска', value: 'IssueDate', width: '100px' },
+                              {
+                                text: 'Результаты PDF',
+                                value: 'DocumentUrl',
+                                align: 'center',
+                                sortable: false,
+                                width: '150px',
+                              },
+                            ]"
+                            :items="certificateVeterinaryIntegrateList"
+                            :loading="false"
+                            :options.sync="options2"
+                            :footer-props="{
+                              'items-per-page-options': [5, 10, 20, 30, 40, 50],
+                            }"
+                            v-if="certificateVeterinaryIntegrateList"
+                          >
+                            <template v-slot:item.ActivityType="{ item }">
+                              <span v-if="$i18n.locale == 'ru'">
+                                {{ item.ActivityType['NameRu'] }}
+                              </span>
+                              <span v-if="$i18n.locale == 'kz'">
+                                {{ item.ActivityType['NameKz'] }}
+                              </span>
+                              <span v-if="$i18n.locale == 'en'">
+                                {{ item.ActivityType['NameEn'] }}
+                              </span>
+                            </template>
+                            <template v-slot:item.GlobalUniqueNumber="{ item }">
+                              {{ item.GlobalUniqueNumber }}
+                            </template>
+                            <template v-slot:item.IssueDate="{ item }">
+                              {{ item.IssueDate | formatDate }}
+                            </template>
+                            <template v-slot:item.Status="{ item }">
+                              <span v-if="$i18n.locale == 'ru'">
+                                {{ item.Status['NameRu'] }}
+                              </span>
+                              <span v-if="$i18n.locale == 'kz'">
+                                {{ item.Status['NameKz'] }}
+                              </span>
+                              <span v-if="$i18n.locale == 'en'">
+                                {{ item.Status['NameRu'] }}
+                              </span>
+                            </template>
+                            <template v-slot:item.DocumentUrl="{ item }">
+                              <a
+                                :href="item.DocumentUrl"
+                                class="tb__table--btn tb__table--delete"
+                                target="_blank"
+                                v-tooltip.top-center="{
+                                  content: 'Скачать',
+                                  class: ['tooltip__btn'],
+                                }"
+                              >
+                                <svg
+                                  width="30"
+                                  height="30"
+                                  viewBox="0 0 30 30"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M4.30371 7.29504V28.2422C4.30371 29.209 5.09473 30 6.06152 30H24.0456C25.0124 30 25.8034 29.209 25.8034 28.2422V1.75781C25.8034 0.791016 25.0124 0 24.0456 0H11.5988"
+                                    fill="#E74C3C"
+                                  />
+                                  <path
+                                    d="M4.30371 7.29504H9.84097C10.8078 7.29504 11.5988 6.50402 11.5988 5.53723V0"
+                                    fill="#C0392B"
+                                  />
+                                  <path
+                                    d="M2.39673 19.6533H4.30311V17.1387L2.22461 19.7278H2.22496C2.26012 19.6818 2.31962 19.6533 2.39673 19.6533Z"
+                                    fill="#262626"
+                                  />
+                                  <path
+                                    d="M27.7091 19.6533H25.8027V17.1387L27.8812 19.7278H27.8809C27.8457 19.6818 27.7862 19.6533 27.7091 19.6533Z"
+                                    fill="#262626"
+                                  />
+                                  <path
+                                    d="M25.906 25.2384C25.8494 25.3893 25.6712 25.5127 25.5101 25.5127H4.59631C4.43517 25.5127 4.25699 25.3893 4.20039 25.2384L2.20694 19.9276C2.15031 19.7767 2.23583 19.6533 2.39696 19.6533H27.7095C27.8706 19.6533 27.9561 19.7767 27.8995 19.9276L25.906 25.2384Z"
+                                    fill="#C0392B"
+                                  />
+                                  <path
+                                    d="M9.82227 23.9743C9.82227 23.8274 9.86574 23.7141 9.95275 23.6343C10.0398 23.5545 10.1662 23.5146 10.3323 23.5146C10.4904 23.5146 10.6116 23.5545 10.6963 23.6343C10.7809 23.7142 10.8232 23.8275 10.8232 23.9743C10.8232 24.118 10.7797 24.2301 10.6927 24.3107C10.6056 24.3913 10.4856 24.4316 10.3323 24.4316C10.1742 24.4316 10.0497 24.3917 9.95876 24.3119C9.86776 24.2321 9.82227 24.1196 9.82227 23.9743Z"
+                                    fill="white"
+                                  />
+                                  <path
+                                    d="M13.9527 21.9844C13.9527 22.3756 13.8373 22.6777 13.6067 22.8908C13.376 23.1039 13.0483 23.2104 12.6237 23.2104H12.3579V24.3718H11.4121V20.871H12.6237C13.0659 20.871 13.3979 20.9676 13.6198 21.1607C13.8417 21.3539 13.9527 21.6285 13.9527 21.9844ZM12.358 22.4394H12.5304C12.6725 22.4394 12.7854 22.3995 12.8692 22.3197C12.953 22.2399 12.9949 22.1297 12.9949 21.9892C12.9949 21.753 12.864 21.6348 12.6022 21.6348H12.358V22.4394Z"
+                                    fill="white"
+                                  />
+                                  <path
+                                    d="M17.4824 22.5471C17.4824 23.1314 17.3216 23.5816 16.9999 23.8977C16.6782 24.2137 16.226 24.3718 15.6434 24.3718H14.5107V20.871H15.7224C16.2843 20.871 16.7181 21.0146 17.0238 21.302C17.3295 21.5893 17.4824 22.0044 17.4824 22.5471ZM16.5006 22.5807C16.5006 22.2598 16.4372 22.022 16.3102 21.8671C16.1833 21.7123 15.9906 21.6348 15.732 21.6348H15.4566V23.596H15.6673C15.9547 23.596 16.1654 23.5126 16.2995 23.3457C16.4336 23.1789 16.5006 22.9239 16.5006 22.5807Z"
+                                    fill="white"
+                                  />
+                                  <path
+                                    d="M19.0408 24.3718H18.1094V20.871H20.1782V21.63H19.0408V22.2981H20.0897V23.0572H19.0408V24.3718Z"
+                                    fill="white"
+                                  />
+                                  <path
+                                    d="M21.3867 10.8346C21.3867 11.0763 21.123 11.274 20.8007 11.274H9.22461C8.90234 11.274 8.63867 11.0763 8.63867 10.8346C8.63867 10.5929 8.90234 10.3951 9.22461 10.3951H20.8007C21.123 10.3951 21.3867 10.5929 21.3867 10.8346Z"
+                                    fill="white"
+                                  />
+                                  <path
+                                    d="M21.3622 13.4713C21.3622 13.713 21.0986 13.9108 20.7763 13.9108H9.2002C8.87793 13.9108 8.61426 13.713 8.61426 13.4713C8.61426 13.2296 8.87793 13.0319 9.2002 13.0319H20.7763C21.0986 13.0319 21.3622 13.2296 21.3622 13.4713Z"
+                                    fill="white"
+                                  />
+                                  <path
+                                    d="M21.3867 16.1137C21.3867 16.3554 21.123 16.5532 20.8007 16.5532H9.22461C8.90234 16.5532 8.63867 16.3554 8.63867 16.1137C8.63867 15.872 8.90234 15.6743 9.22461 15.6743H20.8007C21.123 15.6743 21.3867 15.872 21.3867 16.1137Z"
+                                    fill="white"
+                                  />
+                                </svg>
+                              </a>
+                            </template>
+                            <v-alert slot="no-results" :value="true" color="error">
+                              Ваш поиск по запросу не дал результатов.
+                            </v-alert>
+                          </v-data-table>
+                        </div>
+
+                        <div
+                          class="form__block--line form__messages"
+                          :class="{
+                            'form__messages--error': permissionsMessage.status != 200,
+                            'form__messages--success': permissionsMessage.status == 200,
+                          }"
+                          v-if="permissionsMessage.status"
+                        >
+                          <label class="form__block--input">
+                            <span class="form__block--title">
+                              {{ permissionsMessage.text }}
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="user-profile__tab--item" v-if="tabElement == 'tabElement5'">
+                      <div class="table__block--content user-profile__block--content">
+                        <div class="user-profile__block--update">
+                          <button
+                            class="user-profile--update"
+                            @click="erapIntegration"
+                            :disabled="erapIntegrateUpdate"
+                          >
+                            <svg
+                              width="19"
+                              height="19"
+                              viewBox="0 0 19 19"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M16.625 1.58334V6.33334H11.875"
+                                stroke="#6D90B4"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              />
+                              <path
+                                d="M2.375 9.5C2.37625 8.12512 2.77527 6.77997 3.52391 5.6268C4.27255 4.47362 5.33885 3.56168 6.59419 3.00096C7.84953 2.44024 9.24029 2.2547 10.5987 2.46671C11.9572 2.67873 13.2252 3.27925 14.25 4.19583L16.625 6.33333"
+                                stroke="#6D90B4"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              />
+                              <path
+                                d="M2.375 17.4167V12.6667H7.125"
+                                stroke="#6D90B4"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              />
+                              <path
+                                d="M16.625 9.5C16.6237 10.8749 16.2247 12.22 15.4761 13.3732C14.7274 14.5264 13.6611 15.4383 12.4058 15.999C11.1505 16.5598 9.75971 16.7453 8.40128 16.5333C7.04285 16.3213 5.77477 15.7208 4.75 14.8042L2.375 12.6667"
+                                stroke="#6D90B4"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                              />
+                            </svg>
+                            обновить
+                          </button>
+                        </div>
+
+                        <v-data-table
+                          :headers="[
+                            { text: 'Правонарушение', value: 'qualification' },
+                            { text: 'Организация', value: 'offenceorg' },
+                            { text: 'Сумма штрафа', value: 'penaltysize' },
+                            { text: 'Сумма платежа', value: 'paymentsize' },
+                            { text: 'Дата', value: 'commissiondate', width: '150px' },
+                          ]"
+                          :items="erapIntegrateList"
+                          :loading="false"
+                          :options.sync="options5"
+                          :footer-props="{
+                            'items-per-page-options': [5, 10, 20, 30, 40, 50],
+                          }"
+                          v-if="erapIntegrateList"
+                        >
+                          <template v-slot:item.qualification="{ item }">
+                            <strong>{{ item.qualification_code }}</strong> -
+                            {{ item.qualification }}
+                          </template>
+                          <template v-slot:item.commissiondate="{ item }">
+                            {{ item.commissiondate | formatDate }}
+                          </template>
+                          <v-alert slot="no-results" :value="true" color="error">
+                            Ваш поиск по запросу не дал результатов.
+                          </v-alert>
+                        </v-data-table>
+
+                        <div
+                          class="form__block--line form__messages"
+                          :class="{
+                            'form__messages--error': erapMessage.status != 200,
+                            'form__messages--success': erapMessage.status == 200,
+                          }"
+                          v-if="erapMessage.status"
+                        >
+                          <label class="form__block--input">
+                            <span class="form__block--title">
+                              {{ erapMessage.text }}
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { mapGetters, mapActions } from 'vuex';
+
+import { api, urlApi, apiSecond } from '@/boot/axios';
+
+import { MOCK_QUOTO, PERMISSIONS_DOC } from '@/mockData.js';
+
+export default {
+  data() {
+    return {
+      applicationsUser: null,
+      //applicationPermission: null,
+      applicationReference: null,
+      applicationsQuota: null,
+      applicationsPond: null,
+      applicationsRegion: null,
+      applicationsFish: null,
+
+      applicationsTrade: null,
+      tradeIntegrateUpdate: true,
+      tradeMessage: {
+        status: null,
+        text: null,
+      },
+
+      applicationsGrownTrade: null,
+      grownTradeUpdatee: true,
+      grownTradeMessage: {
+        status: null,
+        text: null,
+      },
+
+      applicationsPurchasedTrade: null,
+      purchasedTradeUpdatee: true,
+      purchasedTradeMessage: {
+        status: null,
+        text: null,
+      },
+
+      applicationsImplementedTrade: null,
+      implementedTradeUpdatee: true,
+      implementedTradeMessage: {
+        status: null,
+        text: null,
+      },
+
+      tabElement: 'tabElement2',
+      tabElementChildren: 'tabElement1',
+      tabElementChildre2: 'tabElement1',
+
+      urlApi: urlApi,
+
+      errorMessage: {
+        status: null,
+        messages: null,
+        text: null,
+      },
+      message: {
+        status: null,
+        text: null,
+      },
+
+      headers1: [
+        // { text: 'Id', value: 'id', width: '50px' },
+        // { text: this.$t('headers.name'), value: 'name', width: '15vw' },
+        // { text: 'Регион', value: 'region' },
+        // { text: 'Водоем', value: 'pond' },
+        // { text: 'Объем', value: 'volume', width: '150px' },
+        // { text: 'Освоено квот', value: 'quota', width: '150px'},
+        // { text: 'Дата контракта', value: 'contractDate', width: '10vw' },
+      ],
+      options1: {
+        itemsPerPage: 5,
+        page: 1,
+      },
+      headers2: [
+        { text: 'Id', value: 'id', width: '50px' },
+        { text: 'План рыболовного региона', value: 'fishingRegionPlan', width: '20vw' },
+        { text: 'Название пруда', value: 'PondName', width: '15vw' },
+        { text: 'Рыболовы', value: 'fishingPersons', width: '10vw' },
+        { text: 'Тип рыбалки', value: 'fishingType', width: '10vw' },
+        // { text: 'Название', value: 'ActivityType' },
+        // { text: 'Номер', value: 'GlobalUniqueNumber' },
+        // { text: 'Никад', value: 'Nikad' },
+        // { text: this.$t('headers.status'), value: 'Status' },
+        // { text: 'Дата выпуска', value: 'IssueDate', width: '100px' },
+        // {
+        //   text: 'Результаты PDF',
+        //   value: 'DocumentUrl',
+        //   align: 'center',
+        //   sortable: false,
+        //   width: '150px',
+        // },
+      ],
+
+      headers3: [
+        { text: 'Id', value: 'id', width: '20px' },
+        // {
+        //   text: this.$t('headers.action'),
+        //   value: 'action',
+        //   align: 'center',
+        //   sortable: false,
+        //   width: '100px',
+        // },
+        { text: 'Улов', value: 'name', width: '10vw' },
+        { text: 'Бригада', value: 'brigade_id' },
+        { text: this.$t('headers.status'), value: 'status' },
+      ],
+      options3: {
+        itemsPerPage: 5,
+        page: 1,
+      },
+      totalTradeItems: 0,
+
+      headers4: [
+        { text: 'Id', value: 'id', width: '50px' },
+        { text: 'Номер', value: 'number' },
+        { text: this.$t('headers.name'), value: 'name', width: '30vw' },
+        { text: 'Дата получения', value: 'date_at', width: '150px' },
+        { text: 'Результаты PDF', value: 'link', align: 'center', sortable: false, width: '150px' },
+      ],
+      headers5: [
+        { text: 'Правонарушение', value: 'qualification' },
+        { text: 'Орган, выявивший правонарушение', value: 'offenceorg' },
+        { text: 'Сумма штрафа', value: 'penaltysize' },
+        { text: 'Сумма платежа', value: 'paymentsize' },
+        { text: 'Дата', value: 'protocoldate', width: '150px' },
+      ],
+      options4: {
+        itemsPerPage: 5,
+        page: 1,
+      },
+
+      referenceIntegrateUpdate: false,
+
+      referenceOriginIntegrateList: null,
+      referenceVeterinaryIntegrateList: null,
+      certificateVeterinaryIntegrateList: null,
+
+      permissionsIntegrateData: null,
+      permissionsIntegrateList: null,
+      permissionsIntegrateUpdate: true,
+      permissionsMessage: {
+        status: null,
+        text: null,
+      },
+      options2: {
+        itemsPerPage: 5,
+        page: 1,
+      },
+
+      erapMessage: {
+        status: null,
+        text: null,
+      },
+      erapIntegrateUpdate: false,
+      erapIntegrateData: null,
+      erapIntegrateList: null,
+      options5: {
+        itemsPerPage: 10,
+        page: 1,
+      },
+    };
+  },
+  computed: {
+    ...mapGetters(['_getFishes', '_getBrigades']),
+    getBrigadeName() {
+      return (id) => {
+        return this._getBrigades.find((b) => b.id == id)?.title || '-';
+      };
+    },
+    getHeaders3() {
+      return [
+        ...this.headers3,
+        ...this._getFishes.map((fish) => {
+          return { text: fish.name, value: 'fish', fish_id: fish.id, width: '150px' };
+        }),
+      ];
+    },
+  },
+  methods: {
+    ...mapActions(['_fetchFishes', '_fetchBrigades']),
+    findFish(fishs, id) {
+      return fishs.find((fish) => fish.fish_id == id)?.value || '0';
+    },
+    regionList(id) {
+      let name = '';
+      this.applicationsRegion.find((element) => {
+        if (element.id == id) name = element.name;
+      });
+      return name;
+    },
+    pondList(id) {
+      let name = '';
+      this.applicationsPond.find((element) => {
+        if (element.id == id) name = element.name;
+      });
+      return name;
+    },
+    fishList(id) {
+      let name = '';
+      this.applicationsFish.find((element) => {
+        if (element.id == id) name = element.name;
+      });
+      return name;
+    },
+    totalFishVolume(value) {
+      let total = 0;
+      value.find((element) => {
+        total += Number(element.value);
+      });
+      return Math.abs(total);
+    },
+    totalVolume(value) {
+      let total = 0;
+      value.find((element) => {
+        total += Number(element.item.value);
+      });
+      return Math.abs(total);
+    },
+    totalVolumeQuota(value) {
+      let total = 0;
+      value.find((element) => {
+        if (element.type == 'quota') {
+          total += Number(element.value);
+        }
+      });
+      return Math.abs(total);
+    },
+
+    async apiGetUser() {
+      try {
+        const response = await api.get('/user-info', {
+          params: {
+            user_id: this.$store.state.userObject?.id,
+          },
+        });
+        if (response.data) {
+          this.applicationsUser = response.data;
+          this.applicationsUser.user_info = eval(
+            '({obj:' + JSON.parse(this.applicationsUser.user_info) + '})',
+          );
+        }
+      } catch (error) {
+        if (error.response) {
+          if (error?.response?.status == 500) {
+            this.errorMessage.status = 500;
+            this.errorMessage.text = this.$t('system_message.500');
+          }
+          if (error?.response?.status == 401) {
+            this.errorMessage.status = 401;
+            this.errorMessage.text = error.response.data.error_message;
+            this.$router.push('/' + this.$i18n.locale + '/login');
+          }
+          if (error?.response?.status == 422) {
+            this.errorMessage.status = 422;
+            this.errorMessage.text = error.response.data.error_message;
+          }
+          if (error?.response?.status == 403) {
+            this.errorMessage.status = 403;
+            this.errorMessage.text = error?.response?.data?.message;
+          }
+        }
+      }
+    },
+    apiGetUserTrade() {
+      this.tradeIntegrateUpdate = false;
+
+      this.apiGetUserTradeList();
+    },
+    paginationUserTradeList(options) {
+      this.apiGetUserTradeList(options.page, options.itemsPerPage);
+    },
+    apiGetUserTradeList(page = 1, itemsPerPage = 10) {
+      let queries = `user_id=${this.applicationsUser.id}&page=${page}&per_page=${itemsPerPage}`;
+
+      api
+        .get(`trade/list?${queries}`)
+        .then((response) => {
+          if (response.data) {
+            this.applicationsTrade = response.data.data;
+            this.totalTradeItems = response.data.total;
+          }
+        })
+        .catch((error) => {
+          if (error?.response?.status == 500) {
+            this.errorMessage.status = 500;
+            this.errorMessage.text = this.$t('system_message.500');
+          }
+          if (error?.response?.status == 401) {
+            this.errorMessage.status = 401;
+            this.errorMessage.text = error.response.data.error_message;
+            this.$router.push('/' + this.$i18n.locale + '/login');
+          }
+          if (error?.response?.status == 422) {
+            this.errorMessage.status = 422;
+            this.errorMessage.text = error.response.data.error_message;
+          }
+          if (error?.response?.status == 403) {
+            this.errorMessage.status = 403;
+            this.errorMessage.text = error?.response?.data?.message;
+          }
+        });
+    },
+    apiGetUserGrownTrade() {
+      this.grownTradeUpdatee = false;
+      this.applicationsGrownTrade = [];
+    },
+    apiGetUserPurchasedTrade() {
+      this.purchasedTradeUpdatee = false;
+      this.applicationsPurchasedTrade = [];
+    },
+    apiGetUserImplementedTrade() {
+      this.implementedTradeUpdatee = false;
+      this.applicationsImplementedTrade = [];
+    },
+
+    apiGetUserQuota() {
+      this.applicationsQuota = MOCK_QUOTO;
+    },
+
+    apiGetPondList() {
+      this.applicationsPond = [];
+    },
+    apiGetRegionList() {
+      this.applicationsRegion = [];
+    },
+    apiGetPondFish() {
+      this.applicationsFish = [];
+    },
+
+    async apiGetList() {
+      await this.apiGetUser();
+      //this.apiGetUserPermission();
+      // this.apiGetUserReference();
+
+      this.apiGetUserTrade();
+      this.apiGetUserGrownTrade();
+      this.apiGetUserPurchasedTrade();
+      this.apiGetUserImplementedTrade();
+
+      this.apiGetUserQuota();
+
+      //Integration
+      this.erapIntegration();
+      this.permissionsIntegration();
+    },
+
+    //Integration
+    async erapIntegration() {
+      this.erapIntegrateData = null;
+      this.erapIntegrateList = null;
+
+      this.erapIntegrateUpdate = true;
+
+      const response = await apiSecond.post('/v2/sysErap/execute');
+
+      if (response?.data?.response?.responseInfo?.status?.code == 200) {
+        this.erapIntegrateList = response?.data?.response?.responseData?.data?.items?.item || [];
+      }
+
+      this.erapMessage = {
+        status: null,
+        text: null,
+      };
+      this.erapIntegrateData = null;
+    },
+    ersopRequestIntegration() {
+      this.ersopMessage = {
+        status: null,
+        text: null,
+      };
+      api
+        .get('integration/user/' + this.$store.state.userObject?.id + '/ersop')
+        .then((response) => {})
+        .catch((error) => {
+          if (error.response) {
+            if (error?.response?.status == 500) {
+              this.ersopMessage.status = 500;
+              this.ersopMessage.text = this.$t('system_message.500');
+            } else if (error?.response?.status == 401) {
+              this.ersopMessage.status = 401;
+              this.ersopMessage.text = error.response.data.error_message;
+              this.$router.push('/' + this.$i18n.locale + '/login');
+            } else if (error?.response?.status == 404) {
+              this.ersopMessage.status = error?.response?.status;
+              this.ersopMessage.text = this.$t('system_message.500');
+            } else {
+              this.ersopMessage.status = error?.response?.status;
+              this.ersopMessage.text = error.response.data.error_message;
+            }
+          }
+          this.ersopIntegrateUpdate = false;
+        });
+      this.ersopIntegration();
+    },
+    ersopIntegration() {
+      this.ersopIntegrateData = null;
+      this.ersopIntegrateList = null;
+
+      this.ersopIntegrateUpdate = true;
+
+      this.ersopMessage = {
+        status: null,
+        text: null,
+      };
+
+      //api.get('integration/user/'+this.$store.state.userObject?.id+'/ersop')
+      api
+        .post('integrations/shep/ersop-get', {
+          user_id: this.$store.state.userObject?.id,
+        })
+        .then((response) => {
+          if (response.status == 200) {
+            this.ersopIntegrateData = response.data.data;
+            this.ersopIntegrateList = response.data.data;
+
+            /*if (this.ersopIntegrateData.response
+              && this.ersopIntegrateData.response.responseData
+              && this.ersopIntegrateData.response.responseData.data
+              && this.ersopIntegrateData.response.responseData.data.items
+          ) {
+            this.ersopIntegrateList
+                = this.ersopIntegrateData.response.responseData.data.items.item.slice().reverse();
+          }*/
+            this.ersopIntegrateUpdate = false;
+          }
+        })
+        .catch((error) => {
+          if (error.response) {
+            if (error?.response?.status == 500) {
+              this.ersopMessage.status = 500;
+              this.ersopMessage.text = this.$t('system_message.500');
+            } else if (error?.response?.status == 401) {
+              this.ersopMessage.status = 401;
+              this.ersopMessage.text = error.response.data.error_message;
+              this.$router.push('/' + this.$i18n.locale + '/login');
+            } else if (error?.response?.status == 404) {
+              this.ersopMessage.status = error?.response?.status;
+              this.ersopMessage.text = this.$t('system_message.500');
+            } else {
+              this.ersopMessage.status = error?.response?.status;
+              this.ersopMessage.text = error.response.data.error_message;
+            }
+          }
+          this.ersopIntegrateUpdate = false;
+        });
+    },
+    async permissionsIntegration() {
+      this.permissionsIntegrateData = null;
+      this.permissionsIntegrateList = null;
+      this.referenceOriginIntegrateList = null;
+      this.referenceVeterinaryIntegrateList = null;
+      this.certificateVeterinaryIntegrateList = null;
+
+      this.permissionsIntegrateUpdate = true;
+
+      this.permissionsMessage = {
+        status: null,
+        text: null,
+      };
+
+      this.permissionsIntegrateData = PERMISSIONS_DOC;
+
+      const response = await apiSecond.get('/v2/r13-moosr3-services?filter[nullable]=false');
+      if (response.data.data) {
+        this.permissionsIntegrateList = response.data.data || [];
+      }
+
+      // if (
+      //   this.permissionsIntegrateData.response &&
+      //   this.permissionsIntegrateData.response.responseData &&
+      //   this.permissionsIntegrateData.response.responseData.data &&
+      //   this.permissionsIntegrateData.response.responseData.data.Licenses
+      // ) {
+      //   this.permissionsIntegrateList =
+      //     this.permissionsIntegrateData.response.responseData.data.Licenses.UniversalLicense?.slice().reverse();
+
+      //   this.referenceOriginIntegrateList = this.permissionsIntegrateList;
+      //   this.referenceVeterinaryIntegrateList = this.permissionsIntegrateList;
+      //   this.certificateVeterinaryIntegrateList = this.permissionsIntegrateList;
+      // }
+
+      this.permissionsIntegrateUpdate = false;
+    },
+  },
+  async mounted() {
+    await this._fetchFishes();
+    await this._fetchBrigades();
+    this.apiGetList();
+    this.apiGetPondList();
+    this.apiGetRegionList();
+    this.apiGetPondFish();
+  },
+  beforeCreate() {
+    if (!localStorage.token) {
+      this.$router.push('/ru/login');
+    }
+  },
+};
+</script>
+
+<style scoped>
+.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+</style>

@@ -1,0 +1,530 @@
+<template>
+  <div
+    class="wrap__content"
+    v-bind:class="{ 'wrap__content--preloader': !$store.state.userObject }"
+  >
+    <v-preloader v-if="!$store.state.userObject" :message="errorMessage"></v-preloader>
+
+    <modal
+      class="modal__block modal__block--table"
+      name="modal_addData"
+      :adaptive="true"
+      :width="1100"
+      :min-width="1100"
+      height="auto"
+    >
+      <div class="modal__block--wrapper modal__table modal__application">
+        <div class="application__modal--line">
+          <div class="modal__table--title" v-if="!selectedId">Добавление новых данных</div>
+          <div class="modal__table--title" v-else-if="action == 'see'">Просмотр данных</div>
+          <div class="modal__table--title" v-else>Редактирование данных</div>
+
+          <div class="row" v-for="(catalog, index) in catalogs" :key="catalog.id">
+            <div class="col-lg-6" v-if="catalog.name != 'Рыбы'">
+              <div class="form__line">
+                <div class="form__line--left">
+                  <div class="form__line--title">
+                    {{ catalog.name }}
+                  </div>
+                </div>
+                <div class="form__line--right">
+                  <div class="form__limit--row">
+                    <div class="form__line--input">
+                      <multiselect
+                        v-if="catalog && catalog.columns"
+                        class="select__status"
+                        v-model="catalog.selected"
+                        :options="catalog.columns[0].values"
+                        label="value"
+                        :clearOnSelect="false"
+                        :clear-on-select="false"
+                        :placeholder="catalog.name"
+                      >
+                        <template slot="singleLabel" slot-scope="{ option }">{{
+                          option.value
+                        }}</template>
+                        <template slot="noResult">{{ $t('components.not_found') }}</template>
+                      </multiselect>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-lg-6">
+              <div class="form__line">
+                <div class="form__line--right">
+                  <p>Виды рыб</p>
+                  <div class="form__limit--row">
+                    <div
+                      style="display: flex; flex-direction: row; align-items: center"
+                      class="mb-2"
+                      v-for="(f, index) in catalog_fishes"
+                      :key="index"
+                    >
+                      <div class="form__line--input mr-2" v-if="fishes">
+                        <multiselect
+                          v-if="fishes[0] && fishes[0].columns"
+                          class="select__status"
+                          v-model="catalog_fishes[index]"
+                          :options="fishes[0].columns[0].values"
+                          label="value"
+                          :clearOnSelect="false"
+                          :clear-on-select="false"
+                          placeholder="Виды рыб"
+                        >
+                          <template slot="singleLabel" slot-scope="{ option }">{{
+                            option.value
+                          }}</template>
+                          <template slot="noResult">{{ $t('components.not_found') }}</template>
+                        </multiselect>
+                      </div>
+                      <input
+                        v-if="fishes && catalog_fishes[index]"
+                        class="data__register__input"
+                        v-model="catalog_fishes[index].kg"
+                        type="number"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="input__row">
+          <button
+            class="input-btn form__line--btn"
+            @click="send()"
+            v-if="action != 'see' && !selectedId"
+          >
+            {{ $t('button.save') }}
+          </button>
+          <button class="input-btn form__line--btn" @click="update()" v-else-if="action != 'see'">
+            Редактировать
+          </button>
+          <button
+            class="input-btn form__line--btn-black form__line--btn"
+            @click="$modal.hide('modal_addData')"
+          >
+            {{ $t('button.close') }}
+          </button>
+        </div>
+      </div>
+    </modal>
+
+    <div class="container" v-if="catalogs && $store.state.userObject">
+      <div class="row">
+        <div class="col-xl-2 col-lg-3">
+          <v-sidebar :active="['DataRegisterSupervisor']"></v-sidebar>
+        </div>
+        <div class="col-xl-10 col-lg-9">
+          <div class="content-wrapper">
+            <div class="card__content">
+              <div class="card__content-header">
+                <div class="content__title">
+                  <div class="content__title--element">
+                    <div class="content__title--text">Реестр данных</div>
+                  </div>
+                </div>
+              </div>
+              <div class="card__content--body">
+                <div class="table__block--content">
+                  <div class="table__block--filter">
+                    <div class="table__filter--left">
+                      <div class="table__filter--search">
+                        <label class="search__label">
+                          <!-- <input type="text" value="" name="filter_search" v-model="filters.search" :placeholder="$t('placeholder.search')"> -->
+                          <!-- <button >
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="#52A5FC" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                              <path d="M20.9999 21L16.6499 16.65" stroke="#52A5FC" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                          </button> -->
+                        </label>
+                      </div>
+                      <div class="table__filter--order">
+                        <!-- <multiselect
+                            class="select__status"
+                            v-model="filterCategories"
+                            :options="orderList"
+                            label="name"
+                            :clearOnSelect="false"
+                            :clear-on-select="false"
+                            :placeholder="$t('placeholder.choose')"
+                        >
+                          <template slot="singleLabel" slot-scope="{ option }">{{ option.name }}</template>
+                          <template slot="noResult">{{ $t('components.not_found') }}</template>
+                        </multiselect> -->
+                      </div>
+                    </div>
+                    <div class="table__filter--right"></div>
+                  </div>
+
+                  <v-data-table
+                    :headers="headers"
+                    :items="dataRegister"
+                    :loading="false"
+                    :options.sync="options"
+                    :footer-props="{
+                      'items-per-page-options': [5, 10, 20, 30, 40, 50],
+                    }"
+                  >
+                    <template v-slot:item.name="{ item, index }">
+                      {{ 'Данные' }} {{ index + 1 }}
+                    </template>
+                    <template v-slot:item.created_at="{ item }">
+                      {{ item.created_at | formatDate }}
+                    </template>
+
+                    <template v-slot:item.action="{ item }">
+                      <a
+                        class="tb__table--btn tb__table--view"
+                        v-tooltip.top-center="{
+                          content: $t('tooltip.look'),
+                          class: ['tooltip__btn'],
+                        }"
+                        @click="openData(item, 'see')"
+                      >
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 18 18"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M0.75 9C0.75 9 3.75 3 9 3C14.25 3 17.25 9 17.25 9C17.25 9 14.25 15 9 15C3.75 15 0.75 9 0.75 9Z"
+                            stroke="#5ABB5E"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                          <path
+                            d="M9 11.25C10.2426 11.25 11.25 10.2426 11.25 9C11.25 7.75736 10.2426 6.75 9 6.75C7.75736 6.75 6.75 7.75736 6.75 9C6.75 10.2426 7.75736 11.25 9 11.25Z"
+                            stroke="#5ABB5E"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                        </svg>
+                      </a>
+                    </template>
+
+                    <v-alert slot="no-results" :value="true" color="error">
+                      {{ $t('system_message.search') }}
+                    </v-alert>
+                  </v-data-table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { api, urlApi } from '@/boot/axios';
+import axios from 'axios';
+import Multiselect from 'vue-multiselect';
+
+export default {
+  components: {
+    Multiselect,
+    axios,
+  },
+  data() {
+    return {
+      urlApi: urlApi,
+
+      applications: null,
+      errorMessage: {
+        status: null,
+        text: null,
+      },
+      message: {
+        status: null,
+        text: null,
+      },
+
+      blockElemet: null,
+      unlockElemet: null,
+
+      filters: {
+        search: '',
+      },
+      options: {
+        itemsPerPage: 10,
+        page: 1,
+      },
+
+      catalog_fishes: [
+        {
+          kg: '',
+        },
+      ],
+
+      filterCategories: this.$t('orders.userList'),
+      orderList: this.$t('orders.user'),
+
+      headers: [
+        { text: 'ID', value: 'id' },
+        { text: this.$t('headers.name'), value: 'name' },
+        { text: this.$t('headers.created_at'), value: 'created_at' },
+        // { text: this.$t('headers.status'), value: 'status' },
+        {
+          text: this.$t('headers.action'),
+          value: 'action',
+          align: 'center',
+          sortable: false,
+          width: '200px',
+        },
+      ],
+      catalogs: [],
+      dataRegister: [],
+      fishes: [],
+      fish: {
+        kg: '',
+      },
+      kg: '',
+      selected: [
+        {
+          value: null,
+        },
+        {
+          value: null,
+        },
+        {
+          value: null,
+        },
+      ],
+      selectedId: null,
+      action: false,
+    };
+  },
+  props: {
+    user: {
+      type: Object,
+    },
+  },
+  mounted() {
+    this.getCatalog();
+    this.getData();
+  },
+  methods: {
+    clearObject() {
+      let catalog = [
+        {
+          kg: '',
+        },
+      ];
+      this.selectedId = null;
+      this.getCatalog();
+      // this.action = action;
+      this.catalog_fishes = catalog;
+    },
+
+    subFish(i) {
+      this.catalog_fishes = this.catalog_fishes.filter(function (e, index) {
+        return index != i;
+        // if(e.value=='Рыбы') {
+        //     e.selected = this.fish;
+        // }
+      });
+    },
+    addFish() {
+      let data = {
+        kg: '',
+      };
+      this.catalog_fishes.push(data);
+    },
+    openData(item, action = null) {
+      // this.clearObject();
+
+      this.selectedId = item.id;
+      this.catalogs = JSON.parse(item.catalogs_json);
+
+      this.action = action;
+      this.catalog_fishes = JSON.parse(item.fishes_json);
+      this.$modal.show('modal_addData');
+    },
+    update() {
+      this.catalogs = this.catalogs.filter(function (e) {
+        return e.name != 'Рыбы';
+        // if(e.value=='Рыбы') {
+        //     e.selected = this.fish;
+        // }
+      });
+
+      api
+        .put(
+          'data/register/' + this.selectedId,
+          {
+            catalogs: this.catalogs,
+            fish: this.catalog_fishes,
+          },
+          {
+            // headers: {
+            //   'Content-Type': 'multipart/form-data'
+            // }
+          },
+        )
+        .then((response) => {
+          this.getData();
+          this.selectedId = null;
+          this.$modal.hide('modal_addData');
+          if (response.status == 200) {
+            this.message.status = 200;
+            this.message.text = response.data.message;
+            this.$router.push({
+              path:
+                '/' +
+                this.$i18n.locale +
+                '/account/limits/' +
+                response.data.data.id +
+                '/' +
+                this.chapter,
+            });
+          }
+        })
+        .catch(() => {});
+    },
+    send() {
+      this.catalogs = this.catalogs.filter(function (e) {
+        return e.name != 'Рыбы';
+        // if(e.value=='Рыбы') {
+        //     e.selected = this.fish;
+        // }
+      });
+
+      api
+        .post(
+          'data/register',
+          {
+            catalogs: this.catalogs,
+            fish: this.catalog_fishes,
+          },
+          {
+            // headers: {
+            //   'Content-Type': 'multipart/form-data'
+            // }
+          },
+        )
+        .then((response) => {
+          this.getData();
+
+          this.$modal.hide('modal_addData');
+          if (response.status == 200) {
+            this.message.status = 200;
+            this.message.text = response.data.message;
+            this.$router.push({
+              path:
+                '/' +
+                this.$i18n.locale +
+                '/account/limits/' +
+                response.data.data.id +
+                '/' +
+                this.chapter,
+            });
+          }
+        })
+        .catch(() => {});
+    },
+    getCatalog() {
+      api
+        .get('guest/data/register/catalog', {
+          // params:{
+          //     'user_id': this.$store.state.userObject.id
+          // }
+        })
+        .then((response) => {
+          this.catalogs = response.data;
+          this.fishes = response.data.filter(function (e) {
+            return e.name == 'Рыбы';
+          });
+
+          // this.catalogs.forEach(element => {
+          //     element.selected = null;
+          // });
+        })
+        .catch(() => {});
+    },
+    getData() {
+      api
+        .get('/user/' + this.$route.params.userId + '/data-register', {
+          // params:{
+          //     'user_id': this.$store.state.userObject.id
+          // }
+        })
+        .then((response) => {
+          this.dataRegister = response.data;
+        })
+        .catch(() => {});
+    },
+  },
+  computed: {
+    filteredlist() {
+      return this.applications.filter((d) => {
+        if (
+          (d.name ? d.name.toLowerCase().includes(this.filters.search.toLowerCase()) : true) &&
+          (this.filterCategories.status == 'all' || d.is_deleted == this.filterCategories.status)
+        ) {
+          return true;
+        }
+      });
+    },
+  },
+
+  beforeCreate() {
+    if (!localStorage.token) {
+      this.$router.push('/ru/login');
+    }
+  },
+  head: {
+    title() {
+      return {
+        inner: 'Реестр данных',
+      };
+    },
+    meta: [],
+  },
+};
+</script>
+<style>
+header .header__row {
+  display: flex;
+}
+.mdi-plus-circle-outline {
+  font-size: 20px;
+  cursor: pointer;
+  color: #52a5fc;
+}
+.mdi-minus-circle-outline {
+  color: #f19797;
+  font-size: 20px;
+  cursor: pointer;
+}
+.mdi-trash-can-outline {
+  color: #f19797;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.data__register__input {
+  width: 126px;
+  height: 42px;
+  left: 585px;
+  top: 287px;
+
+  background: #ffffff;
+  border: 1px solid #d3e7fb;
+  box-sizing: border-box;
+  border-radius: 5px;
+  padding-left: 10px;
+  outline: none;
+}
+</style>
